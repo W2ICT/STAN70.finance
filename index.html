@@ -112,6 +112,39 @@ input:disabled,select:disabled,textarea:disabled{color:var(--tx);opacity:1;backg
 .viewer img{max-width:100%;max-height:100%}
 .viewer button{position:absolute;top:14px;right:14px;background:#fff;border:0;border-radius:50%;width:42px;height:42px;font-size:20px}
 .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:22px;z-index:30;display:none;max-width:90vw;text-align:center;font-size:14px}
+.vt{display:flex;margin:12px 20px 0}
+.vt button{flex:1}
+#dashView{padding:0 20px 20px}
+.dsec{margin-top:22px}
+.dsec h3{margin:0;font-size:16px}
+.dcap{margin:3px 0 10px;font-size:12px;color:var(--mut);line-height:1.5}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{background:var(--soft);border-radius:14px;padding:12px}
+.kpi small{display:block;color:var(--mut);font-size:12px}
+.kpi b{display:block;font-size:19px;margin:2px 0}
+.g{color:var(--in)}.rd{color:var(--out)}
+.dl{font-size:12px;font-weight:600}.dl.g{color:var(--in)}.dl.b{color:var(--out)}.dl.n{color:var(--mut)}
+.kmini{display:flex;margin-top:10px;background:var(--soft);border-radius:14px;padding:10px 4px}
+.kmini div{flex:1;text-align:center}.kmini b{display:block;font-size:15px}.kmini small{color:var(--mut);font-size:11px}
+.nar{margin:0;padding:0;list-style:none}
+.nar li{padding:9px 0 9px 16px;border-bottom:1px solid var(--bd);font-size:14px;line-height:1.6;position:relative}
+.nar li::before{content:"";position:absolute;left:0;top:17px;width:6px;height:6px;border-radius:50%;background:var(--ac)}
+.drow{padding:9px 0;border-bottom:1px solid var(--bd)}
+.dtop{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.dtop small{color:var(--mut);font-size:12px}
+.dbar{height:6px;background:var(--soft);border-radius:3px;margin-top:6px;overflow:hidden}
+.dbar i{display:block;height:100%;border-radius:3px}
+.dsub{font-size:12px;color:var(--mut);margin-top:4px}
+.dnone{color:var(--mut);font-size:14px;padding:8px 0}
+.dli{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd);font-size:14px}
+.dli small{display:block;color:var(--mut);font-size:12px}
+.trend{width:100%;height:auto}
+.dleg{display:flex;gap:14px;font-size:12px;color:var(--mut);margin-top:4px;flex-wrap:wrap}
+.dleg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+.dact{display:flex;gap:8px}
+.dact div{flex:1;background:var(--soft);border-radius:12px;padding:10px;text-align:center}
+.dact b{display:block;font-size:18px}.dact small{color:var(--mut);font-size:12px}
+.dlink{background:none;border:0;color:var(--ac);font-size:14px;text-decoration:underline;margin-top:8px;padding:0}
 body:not(.is-admin) .admonly{display:none!important}
 .role-card{display:block;width:100%;text-align:left;padding:18px;border:1px solid var(--bd);border-radius:14px;background:#fff;margin-bottom:10px;color:var(--tx)}
 .role-card b{display:block;font-size:17px}
@@ -151,6 +184,8 @@ body:not(.is-admin) .admonly{display:none!important}
  </div>
 </header>
 
+<div class="seg2 vt"><button id="vList" class="on">รายการ</button><button id="vDash">Dashboard</button></div>
+<div id="listView">
 <div class="search" id="searchBox"><input id="q" type="search" placeholder="ค้นหารายการ / หมายเหตุ"></div>
 <div class="controls">
  <div class="seg2 tabs"><button data-f="all" class="on">ทั้งหมด</button><button data-f="in">รับ</button><button data-f="out">จ่าย</button></div>
@@ -162,6 +197,8 @@ body:not(.is-admin) .admonly{display:none!important}
  </div>
 </details>
 <div class="list" id="list"><div class="empty">กำลังโหลด...</div></div>
+</div>
+<div id="dashView" style="display:none"></div>
 <button class="fab" id="fab" style="display:none" aria-label="เพิ่มรายการ">＋</button>
 
 <div class="sheet-bg" id="formBg"><div class="sheet">
@@ -308,7 +345,7 @@ const lClear=n=>lreq(lstore(n,"readwrite").clear());
 let all=[],pend=[],logs=[],user=null,admin=false,unitName="";
 const DEFAULT_DRIVE_URL="https://script.google.com/macros/s/AKfycbwZxAY8jG_ODmOWDUJwZOtYDDoyHSzbYapNtNDvM-PgtHPlzi5qxriYWTBNRvIyWRi-/exec";
 let driveUrl=DEFAULT_DRIVE_URL;
-let view=new Date(),filter="all",editing=null,formType="in",photos=[],chartType="out";
+let view=new Date(),filter="all",editing=null,formType="in",photos=[],chartType="out",mode="list";
 const urls=new Map();
 const urlOf=b=>{if(!urls.has(b))urls.set(b,URL.createObjectURL(b));return urls.get(b)};
 const pendOf=id=>pend.filter(p=>p.txId===id);
@@ -330,6 +367,7 @@ function render(){
  $("sIn").textContent=fmt(inn);$("sOut").textContent=fmt(out);
  $("sPrev").textContent=fmt(before);$("sBal").textContent=fmt(before+inn-out);
  renderChart(cur);
+ if(mode==="dash")renderDash();
  const q=$("q").value.trim().toLowerCase();
  const rows=cur.filter(t=>(filter==="all"||t.type===filter)&&(!q||[t.title,t.note,t.ref,t.cat].join(" ").toLowerCase().includes(q)))
   .sort((a,b)=>b.date.localeCompare(a.date)||(b.created||0)-(a.created||0));
@@ -366,6 +404,119 @@ function renderChart(cur){
 document.querySelectorAll(".mini button").forEach(b=>b.onclick=()=>{
  chartType=b.dataset.c;document.querySelectorAll(".mini button").forEach(x=>x.classList.toggle("on",x===b));render();
 });
+
+/* ---------- dashboard ---------- */
+const MSH=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+const sumT=(a,ty)=>a.filter(t=>t.type===ty).reduce((s,t)=>s+t.amount,0);
+const inMonth=(y,m)=>all.filter(t=>t.date.slice(0,7)===`${y}-${pad(m+1)}`);
+const pctChg=(a,b)=>b>0?(a-b)/b*100:null;
+const dlt=(v,goodUp)=>v===null?"":`<span class="dl ${(v>=0)===goodUp?"g":"b"}">${v>=0?"▲":"▼"}${Math.abs(v).toFixed(0)}%</span>`;
+const byCat=(a,ty)=>{const o={};a.filter(t=>t.type===ty).forEach(t=>o[t.cat]=(o[t.cat]||0)+t.amount);return o};
+const kfmt=n=>n>=1000?(n/1000).toFixed(n>=10000?0:1)+"k":String(Math.round(n));
+const dsec=(title,cap,body)=>`<section class="dsec"><h3>${title}</h3><p class="dcap">${cap}</p>${body}</section>`;
+
+function updateFab(){$("fab").style.display=(admin&&mode==="list")?"":"none"}
+function setMode(m){
+ mode=m;
+ $("listView").style.display=m==="list"?"":"none";
+ $("dashView").style.display=m==="dash"?"":"none";
+ $("vList").classList.toggle("on",m==="list");
+ $("vDash").classList.toggle("on",m==="dash");
+ updateFab();render();window.scrollTo(0,0);
+}
+
+function catBlock(ty,cur,prev){
+ const by=byCat(cur,ty),pby=byCat(prev,ty),tot=Object.values(by).reduce((s,v)=>s+v,0);
+ const items=Object.entries(by).sort((a,b)=>b[1]-a[1]);
+ if(!items.length)return `<div class="dnone">ไม่มีข้อมูลในเดือนนี้</div>`;
+ return items.map(([c,v],i)=>{
+  const p=v/tot*100,pv=pby[c];
+  const ch=pv==null?'<span class="dl n">ใหม่</span>':dlt(pctChg(v,pv),ty==="in");
+  const cnt=cur.filter(t=>t.type===ty&&t.cat===c).length;
+  return `<div class="drow"><div class="dtop"><span>${esc(c)} <small>${cnt} รายการ</small></span><b>${fmt(v)}</b></div><div class="dbar"><i style="width:${p.toFixed(1)}%;background:${PAL[i%PAL.length]}"></i></div><div class="dsub">${p.toFixed(1)}% ของ${ty==="in"?"รายรับ":"รายจ่าย"}ทั้งเดือน ${ch}</div></div>`;
+ }).join("");
+}
+function topList(ty,cur,n){
+ const l=cur.filter(t=>t.type===ty).sort((a,b)=>b.amount-a.amount).slice(0,n);
+ if(!l.length)return `<div class="dnone">ไม่มีข้อมูลในเดือนนี้</div>`;
+ return l.map((t,i)=>`<div class="dli"><span>${i+1}. ${esc(t.title||t.cat)}<small>${thDate(t.date)} · ${esc(t.cat)}</small></span><b class="${ty==="in"?"g":"rd"}">${fmt(t.amount)}</b></div>`).join("");
+}
+function trendSvg(months,curIdx){
+ const W=320,H=150,base=H-22,top=14,gw=W/months.length,bw=15;
+ const mx=Math.max(1,...months.flatMap(x=>[x.i,x.o]));
+ const hh=v=>(base-top)*v/mx;
+ let g="";
+ months.forEach((x,k)=>{
+  const cx=gw*k+gw/2,hi=hh(x.i),ho=hh(x.o),op=k===curIdx?1:.55;
+  g+=`<rect x="${cx-bw-1.5}" y="${base-hi}" width="${bw}" height="${hi}" rx="3" fill="#16803c" opacity="${op}"/>`
+   +`<rect x="${cx+1.5}" y="${base-ho}" width="${bw}" height="${ho}" rx="3" fill="#d1342f" opacity="${op}"/>`
+   +`<text x="${cx-bw/2-1.5}" y="${base-hi-3}" font-size="8" text-anchor="middle" fill="#16803c">${x.i?kfmt(x.i):""}</text>`
+   +`<text x="${cx+bw/2+1.5}" y="${base-ho-3}" font-size="8" text-anchor="middle" fill="#d1342f">${x.o?kfmt(x.o):""}</text>`
+   +`<text x="${cx}" y="${H-6}" font-size="10" text-anchor="middle" fill="${k===curIdx?"#1c1917":"#8a8a85"}" font-weight="${k===curIdx?700:400}">${x.l}</text>`;
+ });
+ return `<svg class="trend" viewBox="0 0 ${W} ${H}">${g}<line x1="0" x2="${W}" y1="${base}" y2="${base}" stroke="#ececea"/></svg>`;
+}
+
+function renderDash(){
+ if(!all.length){$("dashView").innerHTML='<div class="empty">ยังไม่มีข้อมูลให้สรุป<br>เมื่อมีรายการ Dashboard จะแสดงที่นี่</div>';return}
+ const y=view.getFullYear(),m=view.getMonth(),mk=monthKey(view);
+ const cur=inMonth(y,m),pv=new Date(y,m-1,1),prev=inMonth(pv.getFullYear(),pv.getMonth());
+ const prevName=THM[pv.getMonth()];
+ const before=all.filter(t=>t.date.slice(0,7)<mk).reduce((s,t)=>s+(t.type==="in"?1:-1)*t.amount,0);
+ const inn=sumT(cur,"in"),out=sumT(cur,"out"),net=inn-out,close=before+net;
+ const pin=sumT(prev,"in"),pout=sumT(prev,"out");
+ const now=new Date(),isNow=now.getFullYear()===y&&now.getMonth()===m;
+ const days=isNow?now.getDate():new Date(y,m+1,0).getDate();
+ const avg=out/days,rate=inn>0?out/inn*100:null;
+ const noDoc=cur.filter(t=>!(t.images&&t.images.length)&&!pendOf(t.id).length);
+ const waiting=cur.filter(t=>pendOf(t.id).length).length;
+
+ /* narrative */
+ const nar=[`ในเดือน${THM[m]} ${y+543} มีรายการทั้งหมด <b>${cur.length}</b> รายการ รับเงิน <b>${fmt(inn)}</b> บาท จ่ายเงิน <b>${fmt(out)}</b> บาท`];
+ if(cur.length){
+  nar.push(net>=0
+   ?`เดือนนี้<b>มีเงินเหลือสุทธิ ${fmt(net)} บาท</b> (รับมากกว่าจ่าย) ยอดคงเหลือสะสมสิ้นเดือนเป็น <b>${fmt(close)}</b> บาท`
+   :`เดือนนี้<b>จ่ายเกินรับ ${fmt(-net)} บาท</b> ต้องใช้เงินสะสมจากเดือนก่อนมาชดเชย ยอดคงเหลือสะสมสิ้นเดือนเหลือ <b>${fmt(close)}</b> บาท`);
+  if(rate!==null)nar.push(`รายจ่ายคิดเป็น <b>${rate.toFixed(0)}%</b> ของรายรับ — ${rate>100?"สูงกว่ารายรับ ควรตรวจสอบรายการใหญ่":rate>=80?"ใกล้เคียงรายรับ ควรระวังการใช้จ่าย":"อยู่ในเกณฑ์ปลอดภัย"}`);
+  else if(out>0)nar.push("เดือนนี้ไม่มีรายรับ รายจ่ายทั้งหมดใช้จากเงินสะสม");
+  const ec=Object.entries(byCat(cur,"out")).sort((a,b)=>b[1]-a[1]);
+  if(ec.length)nar.push(`หมวดที่จ่ายมากที่สุดคือ <b>${esc(ec[0][0])}</b> ${fmt(ec[0][1])} บาท (${(ec[0][1]/out*100).toFixed(0)}% ของรายจ่าย)${ec[1]?` รองลงมาคือ ${esc(ec[1][0])} ${fmt(ec[1][1])} บาท`:""}`);
+  const big=cur.filter(t=>t.type==="out").sort((a,b)=>b.amount-a.amount)[0];
+  if(big)nar.push(`รายการจ่ายสูงสุดคือ "${esc(big.title||big.cat)}" <b>${fmt(big.amount)}</b> บาท เมื่อ ${thDate(big.date)}`);
+  if(out>0)nar.push(`เฉลี่ยจ่ายวันละ <b>${fmt(avg)}</b> บาท${isNow?` (นับถึงวันที่ ${days} ของเดือน)`:""}`);
+ }
+ const po=pctChg(out,pout);
+ if(po!==null){
+  const pi=pctChg(inn,pin);
+  nar.push(`เทียบกับ${prevName} รายจ่าย<b>${out>=pout?"เพิ่มขึ้น":"ลดลง"} ${Math.abs(po).toFixed(0)}%</b> (${fmt(Math.abs(out-pout))} บาท)${pi!==null?` และรายรับ${inn>=pin?"เพิ่มขึ้น":"ลดลง"} ${Math.abs(pi).toFixed(0)}%`:""}`);
+ }
+ if(cur.length)nar.push(noDoc.length?`มี <b>${noDoc.length}</b> รายการที่ยังไม่แนบสลิป/ภาพบิล${waiting?` (รออัปโหลด ${waiting} รายการ)`:""}`:"ทุกรายการแนบหลักฐานสลิป/บิลครบแล้ว");
+
+ /* trend */
+ const months=[];
+ for(let i=5;i>=0;i--){const d=new Date(y,m-i,1),l=inMonth(d.getFullYear(),d.getMonth());months.push({l:MSH[d.getMonth()],i:sumT(l,"in"),o:sumT(l,"out")})}
+
+ /* edit activity */
+ const t0=new Date(y,m,1).getTime(),t1=new Date(y,m+1,1).getTime();
+ const lg=logs.filter(l=>l.ts>=t0&&l.ts<t1),cnt=a=>lg.filter(l=>l.action===a).length;
+
+ const kpi=(label,val,cls,extra)=>`<div class="kpi"><small>${label}</small><b class="${cls}">${val}</b>${extra||"<span class=\"dl n\">&nbsp;</span>"}</div>`;
+ $("dashView").innerHTML=
+  dsec("ภาพรวมเดือนนี้","ตัวเลข ▲▼ คือการเปลี่ยนแปลงเทียบกับเดือนก่อน (สีเขียว = ดีขึ้น, สีแดง = ควรระวัง)",
+   `<div class="kpis">${kpi("รายรับ","+"+fmt(inn),"g",dlt(pctChg(inn,pin),true))}${kpi("รายจ่าย","−"+fmt(out),"rd",dlt(pctChg(out,pout),false))}${kpi("เหลือสุทธิเดือนนี้",(net>=0?"+":"−")+fmt(Math.abs(net)),net>=0?"g":"rd")}${kpi("คงเหลือสะสมสิ้นเดือน",fmt(close),"")}</div>
+    <div class="kmini"><div><b>${cur.length}</b><small>รายการ</small></div><div><b>${fmt(avg)}</b><small>เฉลี่ยจ่าย/วัน</small></div><div><b>${rate===null?"–":rate.toFixed(0)+"%"}</b><small>จ่ายต่อรับ</small></div></div>`)
+ +dsec("สรุปให้อ่านง่าย","ระบบสรุปสิ่งที่เกิดขึ้นในเดือนนี้เป็นข้อความ",`<ul class="nar">${nar.map(x=>`<li>${x}</li>`).join("")}</ul>`)
+ +dsec("แนวโน้ม 6 เดือนล่าสุด","เทียบรายรับ (เขียว) กับรายจ่าย (แดง) ถ้าแท่งแดงสูงกว่าแท่งเขียว แปลว่าเดือนนั้นจ่ายเกินรับ เดือนที่เลือกจะเข้มกว่าเดือนอื่น",
+   `${trendSvg(months,5)}<div class="dleg"><span><i style="background:#16803c"></i>รายรับ</span><span><i style="background:#d1342f"></i>รายจ่าย</span><span>หน่วย k = พันบาท</span></div>`)
+ +dsec("รายจ่ายแยกตามหมวด","เรียงจากหมวดที่จ่ายมากที่สุด แถบแสดงสัดส่วนต่อรายจ่ายทั้งเดือน ▲▼ เทียบกับหมวดเดียวกันในเดือนก่อน",catBlock("out",cur,prev))
+ +dsec("รายรับแยกตามหมวด","แหล่งที่มาของรายรับในเดือนนี้ และสัดส่วนของแต่ละแหล่ง",catBlock("in",cur,prev))
+ +dsec("รายการจ่ายสูงสุด 5 อันดับ","ใช้ตรวจสอบรายการใหญ่ที่มีผลต่อยอดรวมมากที่สุด",topList("out",cur,5))
+ +dsec("รายการรับสูงสุด 3 อันดับ","รายการที่ทำให้รายรับเดือนนี้เพิ่มมากที่สุด",topList("in",cur,3))
+ +dsec("ความครบถ้วนของหลักฐาน",`ตรวจว่ารายการใดยังไม่มีสลิปโอนหรือภาพบิลแนบ (ครบ ${cur.length-noDoc.length} จาก ${cur.length} รายการ)`,
+   noDoc.length?noDoc.slice(0,8).map(t=>`<div class="dli"><span>${esc(t.title||t.cat)}<small>${thDate(t.date)} · ${t.type==="in"?"รายรับ":"รายจ่าย"}</small></span><b>${fmt(t.amount)}</b></div>`).join("")+(noDoc.length>8?`<div class="dnone">และอีก ${noDoc.length-8} รายการ</div>`:""):`<div class="dnone">${cur.length?"ทุกรายการมีหลักฐานแนบครบ ✓":"ไม่มีรายการในเดือนนี้"}</div>`)
+ +dsec("การแก้ไขข้อมูลเดือนนี้",`จำนวนครั้งที่นายทหารการเงินเพิ่ม/แก้ไข/ลบข้อมูลในเดือนนี้${logs.length>=200?" (นับจาก 200 รายการล่าสุด)":""}`,
+   `<div class="dact"><div><b>${cnt("add")}</b><small>เพิ่ม</small></div><div><b>${cnt("edit")}</b><small>แก้ไข</small></div><div><b>${cnt("delete")}</b><small>ลบ</small></div></div><button class="dlink" data-act="log">ดูประวัติการแก้ไขทั้งหมด</button>`);
+}
 
 /* ---------- form ---------- */
 function setType(t){
@@ -566,7 +717,7 @@ setPersistence(auth,browserSessionPersistence).catch(()=>{});
 function setRole(v){
  admin=v;
  document.body.classList.toggle("is-admin",v);
- $("fab").style.display=v?"":"none";
+ updateFab();
  const b=$("roleBadge");
  b.textContent=v?"นายทหารการเงิน":"หัวหน้า · ดูอย่างเดียว";
  b.className="role on"+(v?" fin":"");
@@ -669,6 +820,9 @@ $("mUnit").onclick=()=>{
  b.set(logRef(),{ts:Date.now(),action:"unit",txId:"",label:`เปลี่ยนชื่อหน่วยเป็น "${n.trim()}"`,changes:[],data:null,by:user?user.email:""});
  b.commit().catch(e=>toast("บันทึกไม่สำเร็จ: "+(e.code||e.message)));
 };
+$("vList").onclick=()=>setMode("list");
+$("vDash").onclick=()=>setMode("dash");
+$("dashView").onclick=e=>{if(e.target.dataset.act==="log"){renderLogs();$("logBg").classList.add("show")}};
 const GS_CODE="// อัปโหลดรูปสลิปเข้าโฟลเดอร์ Google Drive (ยืนยันตัวตนด้วย Firebase ของนายทหารการเงิน)\nconst FOLDER_ID = '1Z3tvptRBJ3cCFZBEnCC8vRNK7Kd7p9lr';\nconst ADMIN_EMAIL = 'admin@stan70fn.app';\nconst API_KEY = 'AIzaSyAwV2QirTn_bjZi7XgF4gDQidYmWiWjpo4';\n\nfunction doPost(e) {\n  try {\n    const p = JSON.parse(e.postData.contents);\n    const res = UrlFetchApp.fetch(\n      'https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + API_KEY,\n      { method: 'post', contentType: 'application/json',\n        payload: JSON.stringify({ idToken: p.idToken }), muteHttpExceptions: true });\n    const u = JSON.parse(res.getContentText());\n    if (!u.users || u.users[0].email !== ADMIN_EMAIL) return out({ ok: false, error: 'unauthorized' });\n    const blob = Utilities.newBlob(Utilities.base64Decode(p.data), p.mime || 'image/jpeg', p.name);\n    const f = DriveApp.getFolderById(FOLDER_ID).createFile(blob);\n    f.setDescription(p.note || '');\n    try { f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (err) {}\n    return out({ ok: true, id: f.getId() });\n  } catch (err) {\n    return out({ ok: false, error: String(err) });\n  }\n}\n\nfunction doGet() { return out({ ok: true, msg: 'ready' }); }\n\nfunction out(o) {\n  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);\n}\n";
 $("mCode").onclick=()=>{if(!needAdmin())return;closeMenu();$("codeTxt").value=GS_CODE;$("codeBg").classList.add("show")};
 $("codeClose").onclick=()=>$("codeBg").classList.remove("show");
