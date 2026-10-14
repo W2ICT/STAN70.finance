@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" id="iconLink" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%3E%3Crect%20width%3D%22512%22%20height%3D%22512%22%20rx%3D%2296%22%20fill%3D%22%231f5f4a%22%2F%3E%3Ccircle%20cx%3D%22256%22%20cy%3D%22256%22%20r%3D%22150%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%2228%22%2F%3E%3Ctext%20x%3D%22256%22%20y%3D%22312%22%20font-size%3D%22190%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22700%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%3E%E0%B8%BF%3C%2Ftext%3E%3C%2Fsvg%3E">
+<title>บัญชีรายรับ-รายจ่ายหน่วย</title>
+<style>
+:root{--ac:#1f5f4a;--in:#16803c;--out:#d1342f;--tx:#1c1917;--mut:#8a8a85;--bd:#ececea;--soft:#f5f5f3}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:system-ui,"Sarabun","Noto Sans Thai",sans-serif;background:#fff;color:var(--tx);font-size:16px;padding-bottom:100px}
+button{font-family:inherit;cursor:pointer}
+
+/* header */
+header{position:sticky;top:0;z-index:5;background:#fff;padding:calc(env(safe-area-inset-top) + 10px) 20px 12px;border-bottom:1px solid var(--bd)}
+.bar{display:flex;align-items:center;justify-content:space-between;min-height:36px}
+.bar h1{font-size:15px;margin:0;font-weight:600;color:var(--mut)}
+.role{display:none;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:middle;background:var(--soft);color:var(--mut)}
+.role.on{display:inline-block}
+.role.fin{background:#f5b800;color:#222}
+.ib{background:none;border:0;font-size:20px;width:38px;height:38px;border-radius:50%;color:var(--tx)}
+.ib:active{background:var(--soft)}
+.month{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:2px}
+.month button{background:none;border:0;font-size:22px;width:36px;height:36px;color:var(--mut)}
+.month span{font-size:16px;font-weight:600;min-width:140px;text-align:center}
+.hero{text-align:center;margin-top:4px}
+.hero small{display:block;color:var(--mut);font-size:13px}
+.hero b{display:block;font-size:40px;line-height:1.15;font-weight:700;letter-spacing:-.5px}
+.stats{display:flex;justify-content:center;gap:22px;margin-top:6px;font-size:14px;font-weight:600}
+.stats .i{color:var(--in)}.stats .o{color:var(--out)}
+.prev{font-size:12px;color:var(--mut);margin-top:2px}
+
+/* controls */
+.controls{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 4px}
+.seg2{display:flex;background:var(--soft);border-radius:10px;padding:3px}
+.seg2 button{border:0;background:none;padding:7px 14px;border-radius:8px;font-size:14px;color:var(--mut)}
+.seg2 button.on{background:#fff;color:var(--tx);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.search{display:none;padding:4px 20px 0}
+.search.show{display:block}
+.search input{background:var(--soft);border:0}
+
+/* chart */
+.chart{margin:6px 20px 0;border-bottom:1px solid var(--bd)}
+.chart summary{list-style:none;padding:12px 0;font-size:14px;color:var(--mut);cursor:pointer;display:flex;justify-content:space-between}
+.chart summary::-webkit-details-marker{display:none}
+.chart summary::after{content:"▾"}
+.chart[open] summary::after{content:"▴"}
+.chart-in{padding-bottom:14px}
+.mini{display:flex;gap:4px;margin-bottom:8px}
+.mini button{border:0;background:var(--soft);padding:5px 12px;border-radius:14px;font-size:13px;color:var(--mut)}
+.mini button.on{background:var(--tx);color:#fff}
+.chart-body{display:flex;align-items:center;gap:14px}
+.donut{width:130px;height:130px;flex:none}
+.donut text{text-anchor:middle;fill:var(--tx)}
+.legend{flex:1;min-width:0;font-size:13px}
+.legend div{display:flex;align-items:center;gap:6px;padding:3px 0}
+.legend i{width:9px;height:9px;border-radius:50%;flex:none}
+.legend span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.legend em{font-style:normal;color:var(--mut);white-space:nowrap}
+.chart-empty{width:100%;text-align:center;color:var(--mut);padding:18px 0;font-size:14px}
+
+/* list */
+.list{padding:0 20px}
+.day{font-size:12px;color:var(--mut);margin:18px 0 2px;letter-spacing:.3px}
+.item{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--bd)}
+.item .thumb{width:42px;height:42px;border-radius:12px;background:var(--soft);object-fit:cover;flex:none;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--mut)}
+.item .mid{flex:1;min-width:0}
+.item .t{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .s{font-size:12px;color:var(--mut);margin-top:1px}
+.amt{font-weight:600;font-size:16px;white-space:nowrap}
+.amt.in{color:var(--in)}.amt.out{color:var(--out)}
+.empty{text-align:center;color:var(--mut);padding:60px 20px;font-size:15px;line-height:1.7}
+.fab{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom) + 20px);width:60px;height:60px;border-radius:50%;border:0;background:var(--ac);color:#fff;font-size:32px;font-weight:300;box-shadow:0 6px 16px rgba(31,95,74,.35);z-index:6}
+
+/* sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10;display:none}
+.sheet-bg.show{display:block}
+#loginBg{z-index:12;background:rgba(255,255,255,.96)}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:94vh;overflow:auto;background:#fff;border-radius:22px 22px 0 0;padding:18px 20px calc(env(safe-area-inset-bottom) + 22px)}
+#loginBg .sheet{top:0;bottom:0;border-radius:0;display:flex;flex-direction:column;justify-content:center;max-width:420px;margin:0 auto}
+.sheet h2{margin:0 0 14px;font-size:18px}
+label{display:block;font-size:12px;color:var(--mut);margin:14px 0 4px}
+input,select,textarea{width:100%;padding:12px;border:1px solid var(--bd);border-radius:12px;font-size:16px;font-family:inherit;background:#fff;color:var(--tx)}
+input:disabled,select:disabled,textarea:disabled{color:var(--tx);opacity:1;background:var(--soft)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;gap:8px}
+.seg button{flex:1;padding:11px;border-radius:12px;border:1px solid var(--bd);background:#fff;font-size:15px;font-weight:600;color:var(--mut)}
+.seg button.on.in{background:var(--in);border-color:var(--in);color:#fff}
+.seg button.on.out{background:var(--out);border-color:var(--out);color:#fff}
+.amount{font-size:38px!important;font-weight:700;text-align:center;border:0;border-bottom:2px solid var(--bd);border-radius:0;padding:10px 0;margin-top:10px}
+.amount:focus{outline:0;border-color:var(--ac)}
+.photos{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.photos .ph{position:relative;width:80px;height:80px}
+.photos img{width:100%;height:100%;object-fit:cover;border-radius:12px;border:1px solid var(--bd)}
+.photos .x{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:var(--tx);color:#fff;font-size:12px}
+.photos .cl{position:absolute;left:3px;bottom:3px;font-size:12px;background:rgba(255,255,255,.9);border-radius:6px;padding:0 3px}
+.ro #fSave,.ro #attachRow,.ro .x{display:none}
+.more{margin-top:14px}
+.more summary{font-size:14px;color:var(--mut);cursor:pointer;padding:4px 0}
+.btnrow{display:flex;gap:8px;margin-top:8px}
+.btn{flex:1;padding:14px;border-radius:12px;border:1px solid var(--bd);background:#fff;color:var(--tx);font-size:16px;font-weight:600}
+.btn.p{background:var(--ac);border-color:var(--ac);color:#fff}
+.btn.d{color:var(--out);border-color:#f3c9c6}
+.btn.dash{border-style:dashed;color:var(--ac);border-color:#b9d3c9;font-weight:500}
+.link{background:none;border:0;color:var(--mut);font-size:14px;margin-top:14px;text-decoration:underline}
+.menu button{display:block;width:100%;text-align:left;padding:15px 2px;border:0;border-bottom:1px solid var(--bd);background:none;font-size:16px;color:var(--tx)}
+.menu #mClose{color:var(--mut);border:0;text-align:center}
+.viewer{position:fixed;inset:0;background:#000;z-index:20;display:none;align-items:center;justify-content:center}
+.viewer.show{display:flex}
+.viewer img{max-width:100%;max-height:100%}
+.viewer button{position:absolute;top:14px;right:14px;background:#fff;border:0;border-radius:50%;width:42px;height:42px;font-size:20px}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:22px;z-index:30;display:none;max-width:90vw;text-align:center;font-size:14px}
+body:not(.is-admin) .admonly{display:none!important}
+.role-card{display:block;width:100%;text-align:left;padding:18px;border:1px solid var(--bd);border-radius:14px;background:#fff;margin-bottom:10px;color:var(--tx)}
+.role-card b{display:block;font-size:17px}
+.role-card small{display:block;color:var(--mut);margin-top:3px;font-size:13px}
+.role-card:active{background:var(--soft)}
+.lg{padding:12px 0;border-bottom:1px solid var(--bd);font-size:14px}
+.lg .lh{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.lg time{font-size:12px;color:var(--mut)}
+.lg .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;background:var(--soft);color:var(--mut)}
+.lg .tag.add{background:#e3f4ea;color:var(--in)}
+.lg .tag.edit{background:#fdf0dc;color:#b45309}
+.lg .tag.delete{background:#fbe4e2;color:var(--out)}
+.lg .lc{font-size:13px;color:var(--mut);margin-top:2px}
+#report{display:none}
+@media print{
+ body>*:not(#report){display:none!important}
+ #report{display:block;padding:10mm;font-size:12pt;color:#000}
+ #report table{width:100%;border-collapse:collapse}
+ #report th,#report td{border:1px solid #000;padding:4px 6px;text-align:left}
+ #report td.n,#report th.n{text-align:right}
+ #report h2,#report p{text-align:center;margin:4px}
+ .sign{margin-top:40px;display:flex;justify-content:space-around;text-align:center}
+}
+</style>
+</head>
+<body>
+<header>
+ <div class="bar">
+  <h1><span id="unitTitle">บัญชีรายรับ-รายจ่ายหน่วย</span><span class="role" id="roleBadge"></span></h1>
+  <div><button class="ib" id="searchBtn" aria-label="ค้นหา">🔍</button><button class="ib" id="menuBtn" aria-label="เมนู">⋯</button></div>
+ </div>
+ <div class="month"><button id="prev">‹</button><span id="monthLabel"></span><button id="next">›</button></div>
+ <div class="hero">
+  <small>คงเหลือ</small><b id="sBal">0.00</b>
+  <div class="stats"><span class="i">รับ +<span id="sIn">0.00</span></span><span class="o">จ่าย −<span id="sOut">0.00</span></span></div>
+  <div class="prev">ยอดยกมา <span id="sPrev">0.00</span></div>
+ </div>
+</header>
+
+<div class="search" id="searchBox"><input id="q" type="search" placeholder="ค้นหารายการ / หมายเหตุ"></div>
+<div class="controls">
+ <div class="seg2 tabs"><button data-f="all" class="on">ทั้งหมด</button><button data-f="in">รับ</button><button data-f="out">จ่าย</button></div>
+</div>
+<details class="chart"><summary>สัดส่วนตามหมวดหมู่</summary>
+ <div class="chart-in">
+  <div class="mini"><button data-c="out" class="on">รายจ่าย</button><button data-c="in">รายรับ</button></div>
+  <div class="chart-body" id="chartBody"></div>
+ </div>
+</details>
+<div class="list" id="list"><div class="empty">กำลังโหลด...</div></div>
+<button class="fab" id="fab" style="display:none" aria-label="เพิ่มรายการ">＋</button>
+
+<div class="sheet-bg" id="formBg"><div class="sheet">
+ <h2 id="formTitle">เพิ่มรายการ</h2>
+ <div class="seg"><button class="in on" data-t="in">รายรับ</button><button class="out" data-t="out">รายจ่าย</button></div>
+ <input id="fAmt" class="amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00">
+ <label>รายการ</label><input id="fTitle" placeholder="เช่น ค่าน้ำดื่ม, เงินสมทบกองทุน">
+ <div class="row2">
+  <div><label>หมวดหมู่</label><select id="fCat"></select></div>
+  <div><label>วันที่</label><input id="fDate" type="date"></div>
+ </div>
+ <div class="btnrow" id="attachRow" style="margin-top:16px">
+  <button class="btn dash" id="bCam">📷 ถ่ายสลิป/บิล</button>
+  <button class="btn dash" id="bGal">🖼️ เลือกรูป</button>
+ </div>
+ <input id="fileCam" type="file" accept="image/*" capture="environment" hidden>
+ <input id="fileGal" type="file" accept="image/*" multiple hidden>
+ <div class="photos" id="photos"></div>
+ <details class="more" id="moreBox"><summary>รายละเอียดเพิ่มเติม</summary>
+  <label>ผู้เกี่ยวข้อง / เลขที่เอกสาร</label><input id="fRef" placeholder="ชื่อผู้โอน / ร้านค้า / เลขที่บิล">
+  <label>หมายเหตุ</label><textarea id="fNote" rows="2"></textarea>
+ </details>
+ <div class="btnrow" style="margin-top:20px">
+  <button class="btn" id="fCancel">ยกเลิก</button>
+  <button class="btn p" id="fSave">บันทึก</button>
+ </div>
+ <div class="btnrow"><button class="btn d" id="fDel" style="display:none">ลบรายการนี้</button></div>
+</div></div>
+
+<div class="sheet-bg" id="menuBg"><div class="sheet menu">
+ <button id="mLog">ประวัติการแก้ไขข้อมูล</button>
+ <button id="mPrint">พิมพ์ / บันทึกรายงานเดือนนี้เป็น PDF</button>
+ <button id="mCsv">ส่งออก CSV เดือนนี้ (Excel)</button>
+ <button id="mBackup">สำรองข้อมูลรายการ (JSON)</button>
+ <button id="mUnit" class="admonly">ตั้งชื่อหน่วย</button>
+ <button id="mRestore" class="admonly">กู้คืนจากไฟล์สำรอง</button>
+ <button id="mMigrate" class="admonly" style="display:none">นำเข้าข้อมูลเก่าในเครื่อง</button>
+ <button id="mSync" class="admonly">อัปโหลดรูปที่ค้างอยู่</button>
+ <button id="mDrive" class="admonly">ตั้งค่า Google Drive (ที่เก็บรูป)</button>
+ <button id="mCode" class="admonly">โค้ด Apps Script สำหรับ Drive</button>
+ <button id="mLogout">สลับมุมมอง / ออกจากระบบ</button>
+ <input id="fileRestore" type="file" accept="application/json" hidden>
+ <button id="mClose">ปิด</button>
+</div></div>
+
+<div class="sheet-bg" id="codeBg"><div class="sheet">
+ <h2>โค้ด Apps Script</h2>
+ <p style="font-size:14px;color:var(--mut);margin:0 0 8px;line-height:1.6">1) เข้า script.google.com (บัญชีที่แก้ไขโฟลเดอร์ Drive ได้) → New project วางโค้ดนี้<br>2) Deploy → New deployment → Web app: Execute as <b>Me</b>, Who has access <b>Anyone</b> แล้วกดอนุญาตสิทธิ์<br>3) คัดลอก URL มาวางที่เมนู "ตั้งค่า Google Drive"</p>
+ <textarea id="codeTxt" rows="12" readonly style="font-family:monospace;font-size:12px"></textarea>
+ <div class="btnrow" style="margin-top:12px"><button class="btn" id="codeClose">ปิด</button><button class="btn p" id="codeCopy">คัดลอกโค้ด</button></div>
+</div></div>
+
+<div class="sheet-bg" id="logBg"><div class="sheet">
+ <h2>ประวัติการแก้ไขข้อมูล</h2>
+ <div id="logList"></div>
+ <div class="btnrow" style="margin-top:14px"><button class="btn" id="logClose">ปิด</button></div>
+</div></div>
+
+<div class="sheet-bg" id="loginBg"><div class="sheet">
+ <h2>เลือกมุมมอง</h2>
+ <div id="roleStep">
+  <button class="role-card" id="roleHead"><b>หัวหน้า</b><small>ดูรายการ รูปสลิป และประวัติการแก้ไขเท่านั้น</small></button>
+  <button class="role-card" id="roleFin"><b>นายทหารการเงิน</b><small>เพิ่ม / แก้ไข / ลบรายการ (ต้องใช้รหัสผ่าน)</small></button>
+ </div>
+ <p id="loginErr" style="color:var(--out);font-size:14px;margin:12px 0 0"></p>
+ <div id="pinStep" style="display:none">
+  <label>รหัสผ่านนายทหารการเงิน</label>
+  <input id="loginPw" type="password" inputmode="numeric" autocomplete="off" placeholder="รหัสผ่าน">
+  <div class="btnrow" style="margin-top:16px"><button class="btn" id="pinBack">กลับ</button><button class="btn p" id="loginOk">เข้าสู่ระบบ</button></div>
+ </div>
+</div></div>
+
+<div class="viewer" id="viewer"><button id="vClose">✕</button><img id="vImg" alt=""></div>
+<div class="toast" id="toast"></div>
+<div id="report"></div>
+
+<script type="module">
+/*
+ ===== ตั้งค่า (ครั้งเดียว) =====
+ 1) Firebase → Authentication → Sign-in method → เปิด Email/Password และ Anonymous
+    Users → Add user:  อีเมล admin@stan70fn.app   รหัสผ่าน = รหัสที่ใช้เข้าแอป + ADMIN_SUFFIX (ดูค่าในโค้ด)
+ 2) Firebase → Firestore Database → Rules:
+      rules_version = '2';
+      service cloud.firestore { match /databases/{db}/documents {
+        function signedIn(){ return request.auth != null; }
+        function adm(){ return signedIn() && request.auth.token.email == 'admin@stan70fn.app'; }
+        match /tx/{id}   { allow read: if signedIn(); allow write: if adm(); }
+        match /meta/{id} { allow read: if signedIn(); allow write: if adm(); }
+        match /logs/{id} { allow read: if signedIn(); allow create: if adm(); }
+      }}
+ 3) รูปสลิปเก็บใน Google Drive: เมนู ⋯ → "โค้ด Apps Script" (คัดลอกไปสร้าง Web app)
+    แล้วเมนู → "ตั้งค่า Google Drive" วาง URL ของ Web app (ไม่ต้องใช้ Firebase Storage)
+*/
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signInAnonymously,setPersistence,browserSessionPersistence,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,setDoc,updateDoc,deleteDoc,writeBatch,query,orderBy,limit,onSnapshot,arrayUnion} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig={
+ apiKey:"AIzaSyAwV2QirTn_bjZi7XgF4gDQidYmWiWjpo4",
+ authDomain:"stan70fn.firebaseapp.com",
+ projectId:"stan70fn",
+ storageBucket:"stan70fn.firebasestorage.app",
+ messagingSenderId:"346965599969",
+ appId:"1:346965599969:web:06992961794d35742a79a0"
+};
+const ADMIN_EMAIL="admin@stan70fn.app",ADMIN_SUFFIX="-stan70fn";
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+let fs;
+try{fs=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})})}catch{fs=getFirestore(app)}
+const txCol=collection(fs,"tx");
+
+const CATS={
+ in:["เงินสมทบ/เงินกองทุน","เงินงบประมาณ","รายได้กิจการ/สวัสดิการ","เงินบริจาค","เงินยืม/รับคืน","อื่นๆ"],
+ out:["อาหาร/เครื่องดื่ม","วัสดุสำนักงาน","ซ่อมบำรุง","ค่าน้ำ/ไฟ/โทรศัพท์","น้ำมัน/ขนส่ง","สวัสดิการ/กิจกรรม","ช่วยเหลือ/เยี่ยมไข้","เงินยืม/ให้ยืม","อื่นๆ"]
+};
+const $=id=>document.getElementById(id);
+const fmt=n=>Number(n).toLocaleString("th-TH",{minimumFractionDigits:2,maximumFractionDigits:2});
+const THM=["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+const pad=n=>String(n).padStart(2,"0");
+const today=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const thDate=s=>{const [y,m,d]=s.split("-").map(Number);return `${d} ${THM[m-1].slice(0,3)} ${y+543}`};
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- local IndexedDB: pending uploads + legacy data ---------- */
+let ldb;
+function openDB(){return new Promise((res,rej)=>{
+ const r=indexedDB.open("unit-ledger",2);
+ r.onupgradeneeded=()=>{
+  const d=r.result;
+  if(!d.objectStoreNames.contains("tx"))d.createObjectStore("tx",{keyPath:"id",autoIncrement:true});
+  if(!d.objectStoreNames.contains("pending"))d.createObjectStore("pending",{keyPath:"pid",autoIncrement:true});
+ };
+ r.onsuccess=()=>{ldb=r.result;res()};r.onerror=()=>rej(r.error);
+})}
+const lreq=r=>new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const lstore=(n,m)=>ldb.transaction(n,m).objectStore(n);
+const lAll=n=>lreq(lstore(n,"readonly").getAll());
+const lPut=(n,o)=>lreq(lstore(n,"readwrite").put(o));
+const lDel=(n,k)=>lreq(lstore(n,"readwrite").delete(k));
+const lClear=n=>lreq(lstore(n,"readwrite").clear());
+
+/* ---------- state ---------- */
+let all=[],pend=[],logs=[],user=null,admin=false,unitName="";
+const DEFAULT_DRIVE_URL="https://script.google.com/macros/s/AKfycbwZxAY8jG_ODmOWDUJwZOtYDDoyHSzbYapNtNDvM-PgtHPlzi5qxriYWTBNRvIyWRi-/exec";
+let driveUrl=DEFAULT_DRIVE_URL;
+let view=new Date(),filter="all",editing=null,formType="in",photos=[],chartType="out";
+const urls=new Map();
+const urlOf=b=>{if(!urls.has(b))urls.set(b,URL.createObjectURL(b));return urls.get(b)};
+const pendOf=id=>pend.filter(p=>p.txId===id);
+const photoSrc=e=>e.url||urlOf(e.blob);
+const toast=m=>{const t=$("toast");t.textContent=m;t.style.display="block";clearTimeout(t._h);t._h=setTimeout(()=>t.style.display="none",2600)};
+async function loadPend(){try{pend=await lAll("pending")}catch{pend=[]}render()}
+
+/* ---------- render ---------- */
+const monthKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+function render(){
+ $("unitTitle").textContent=unitName||"บัญชีรายรับ-รายจ่ายหน่วย";
+ const mk=monthKey(view);
+ $("monthLabel").textContent=`${THM[view.getMonth()]} ${view.getFullYear()+543}`;
+ const sign=t=>t.type==="in"?1:-1;
+ const before=all.filter(t=>t.date.slice(0,7)<mk).reduce((s,t)=>s+sign(t)*t.amount,0);
+ const cur=all.filter(t=>t.date.slice(0,7)===mk);
+ const inn=cur.filter(t=>t.type==="in").reduce((s,t)=>s+t.amount,0);
+ const out=cur.filter(t=>t.type==="out").reduce((s,t)=>s+t.amount,0);
+ $("sIn").textContent=fmt(inn);$("sOut").textContent=fmt(out);
+ $("sPrev").textContent=fmt(before);$("sBal").textContent=fmt(before+inn-out);
+ renderChart(cur);
+ const q=$("q").value.trim().toLowerCase();
+ const rows=cur.filter(t=>(filter==="all"||t.type===filter)&&(!q||[t.title,t.note,t.ref,t.cat].join(" ").toLowerCase().includes(q)))
+  .sort((a,b)=>b.date.localeCompare(a.date)||(b.created||0)-(a.created||0));
+ if(!rows.length){$("list").innerHTML='<div class="empty">ยังไม่มีรายการ<br>กดปุ่ม ＋ เพื่อเพิ่มรายการ</div>';return}
+ let h="",last="";
+ for(const t of rows){
+  if(t.date!==last){h+=`<div class="day">${thDate(t.date)}</div>`;last=t.date}
+  const imgs=t.images||[],pd=pendOf(t.id);
+  const src=imgs[0]?imgs[0].url:pd[0]?urlOf(pd[0].blob):"";
+  const th=src?`<img class="thumb" src="${src}" alt="">`:`<div class="thumb">${t.type==="in"?"＋":"－"}</div>`;
+  const n=imgs.length+pd.length;
+  h+=`<div class="item" data-id="${t.id}">${th}<div class="mid"><div class="t">${esc(t.title||t.cat)}</div><div class="s">${esc(t.cat)}${t.ref?" · "+esc(t.ref):""}${n?" · 📎"+n:""}${pd.length?" · ⏳รออัปโหลด":""}</div></div><div class="amt ${t.type}">${t.type==="in"?"+":"−"}${fmt(t.amount)}</div></div>`;
+ }
+ $("list").innerHTML=h;
+}
+
+/* ---------- donut chart ---------- */
+const PAL=["#2b8a6e","#e08a2e","#3d78c9","#c63d3d","#8a5cc7","#d1b21f","#2aa5b5","#d9609a","#7a8b87"];
+function renderChart(cur){
+ const rows=cur.filter(t=>t.type===chartType);
+ const by={};rows.forEach(t=>by[t.cat]=(by[t.cat]||0)+t.amount);
+ const items=Object.entries(by).sort((a,b)=>b[1]-a[1]);
+ const total=items.reduce((s,[,v])=>s+v,0);
+ if(!total){$("chartBody").innerHTML=`<div class="chart-empty">ยังไม่มี${chartType==="in"?"รายรับ":"รายจ่าย"}ในเดือนนี้</div>`;return}
+ let acc=0,segs="";
+ items.forEach(([,v],i)=>{
+  const p=v/total*100;
+  segs+=`<circle cx="21" cy="21" r="15.9155" fill="none" stroke="${PAL[i%PAL.length]}" stroke-width="6" stroke-dasharray="${p} ${100-p}" stroke-dashoffset="${25-acc}"/>`;
+  acc+=p;
+ });
+ const leg=items.map(([c,v],i)=>`<div><i style="background:${PAL[i%PAL.length]}"></i><span>${esc(c)}</span><em>${(v/total*100).toFixed(0)}% · ${fmt(v)}</em></div>`).join("");
+ $("chartBody").innerHTML=`<svg class="donut" viewBox="0 0 42 42"><circle cx="21" cy="21" r="15.9155" fill="none" stroke="#f0f0ee" stroke-width="6"/>${segs}<text x="21" y="19.5" font-size="3" style="fill:var(--mut)">${chartType==="in"?"รายรับรวม":"รายจ่ายรวม"}</text><text x="21" y="24.5" font-size="4" font-weight="700">${fmt(total)}</text></svg><div class="legend">${leg}</div>`;
+}
+document.querySelectorAll(".mini button").forEach(b=>b.onclick=()=>{
+ chartType=b.dataset.c;document.querySelectorAll(".mini button").forEach(x=>x.classList.toggle("on",x===b));render();
+});
+
+/* ---------- form ---------- */
+function setType(t){
+ formType=t;
+ document.querySelectorAll(".seg button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+ const cur=$("fCat").value;
+ $("fCat").innerHTML=CATS[t].map(c=>`<option>${c}</option>`).join("");
+ if(CATS[t].includes(cur))$("fCat").value=cur;
+}
+function renderPhotos(){
+ $("photos").innerHTML=photos.map((e,i)=>`<div class="ph"><img src="${photoSrc(e)}" data-i="${i}" alt=""><span class="cl">${e.url?"☁️":"⏳"}</span><button class="x" data-x="${i}">✕</button></div>`).join("");
+}
+function openForm(t,ro){
+ editing=t||null;
+ document.querySelector("#formBg .sheet").classList.toggle("ro",!!ro);
+ $("fCancel").textContent=ro?"ปิด":"ยกเลิก";
+ $("formTitle").textContent=ro?"รายละเอียดรายการ":t?"แก้ไขรายการ (Admin)":"เพิ่มรายการ";
+ setType(t?t.type:"in");
+ $("fAmt").value=t?t.amount:"";
+ $("fDate").value=t?t.date:today();
+ if(t)$("fCat").value=t.cat;
+ $("fTitle").value=t?t.title:"";$("fRef").value=t?t.ref||"":"";$("fNote").value=t?t.note||"":"";
+ $("moreBox").open=!!(t&&(t.ref||t.note));
+ photos=t?[...(t.images||[]).map(x=>({url:x.url,path:x.path})),...pendOf(t.id).map(p=>({blob:p.blob,pid:p.pid}))]:[];
+ renderPhotos();
+ $("fDel").style.display=t&&!ro?"block":"none";
+ document.querySelectorAll("#formBg input,#formBg select,#formBg textarea,#formBg .seg button").forEach(e=>e.disabled=!!ro);
+ $("formBg").classList.add("show");
+}
+const closeForm=()=>$("formBg").classList.remove("show");
+
+/* resize + compress image so uploads stay small */
+function compress(file,max=1400,q=.78){return new Promise((res,rej)=>{
+ const img=new Image(),u=URL.createObjectURL(file);
+ img.onload=()=>{
+  const s=Math.min(1,max/Math.max(img.width,img.height));
+  const c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+  c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+  URL.revokeObjectURL(u);
+  c.toBlob(b=>b?res(b):rej(new Error("compress")),"image/jpeg",q);
+ };
+ img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("load"))};
+ img.src=u;
+})}
+async function addFiles(files){
+ for(const f of files){try{photos.push({blob:await compress(f)})}catch{toast("อ่านรูปไม่สำเร็จ")}}
+ renderPhotos();
+}
+
+const LBL={type:"ประเภท",amount:"จำนวนเงิน",date:"วันที่",cat:"หมวดหมู่",title:"รายการ",ref:"ผู้เกี่ยวข้อง/เลขที่",note:"หมายเหตุ"};
+const snap=t=>({type:t.type,amount:t.amount,date:t.date,cat:t.cat,title:t.title||"",ref:t.ref||"",note:t.note||""});
+const showV=(k,v)=>k==="type"?(v==="in"?"รายรับ":"รายจ่าย"):k==="amount"?fmt(v):(v===""||v==null?"(ว่าง)":String(v));
+const logDoc=(action,t,changes,data)=>({ts:Date.now(),action,txId:t.id||"",label:`${t.title||t.cat} (${t.type==="in"?"+":"−"}${fmt(t.amount)})`,changes:changes||[],data:data||null,by:user?user.email:""});
+const logRef=()=>doc(collection(fs,"logs"));
+const addLog=(action,label)=>setDoc(logRef(),{ts:Date.now(),action,txId:"",label,changes:[],data:null,by:user?user.email:""}).catch(()=>{});
+
+async function save(){
+ if(!admin){toast("เฉพาะนายทหารการเงินเท่านั้น");return}
+ const amount=parseFloat($("fAmt").value);
+ if(!(amount>0)){toast("กรุณากรอกจำนวนเงิน");$("fAmt").focus();return}
+ if(!$("fDate").value){toast("กรุณาเลือกวันที่");return}
+ const existing=photos.filter(e=>e.url).map(({url,path})=>({url,path}));
+ const keepPids=new Set(photos.filter(e=>e.pid).map(e=>e.pid));
+ const addN=photos.filter(e=>e.blob&&!e.pid).length;
+ const f={type:formType,amount:Math.round(amount*100)/100,date:$("fDate").value,cat:$("fCat").value,
+  title:$("fTitle").value.trim(),ref:$("fRef").value.trim(),note:$("fNote").value.trim(),images:existing,updated:Date.now()};
+ const fail=e=>toast("บันทึกขึ้นระบบไม่สำเร็จ: "+(e.code||e.message));
+ const b=writeBatch(fs);
+ let id;
+ if(editing){
+  id=editing.id;
+  const before=snap(editing),after=snap(f);
+  const changes=Object.keys(LBL).filter(k=>before[k]!==after[k]).map(k=>({f:LBL[k],from:showV(k,before[k]),to:showV(k,after[k])}));
+  const oldN=(editing.images||[]).length;
+  if(existing.length<oldN)changes.push({f:"รูปแนบ",from:`${oldN} รูป`,to:`ลบ ${oldN-existing.length} รูป`});
+  if(addN)changes.push({f:"รูปแนบ",from:"",to:`เพิ่ม ${addN} รูป`});
+  for(const p of pendOf(id))if(!keepPids.has(p.pid))await lDel("pending",p.pid);
+  b.update(doc(fs,"tx",id),f);
+  if(changes.length)b.set(logRef(),logDoc("edit",{...f,id},changes,null));
+ }else{
+  const d=doc(txCol);id=d.id;
+  b.set(d,{...f,created:Date.now(),by:user?user.email:""});
+  b.set(logRef(),logDoc("add",{...f,id},addN?[{f:"รูปแนบ",from:"",to:`${addN} รูป`}]:[],null));
+ }
+ b.commit().catch(fail);
+ for(const e of photos.filter(e=>e.blob&&!e.pid))await lPut("pending",{txId:id,blob:e.blob});
+ const [y,m]=f.date.split("-").map(Number);view=new Date(y,m-1,1);
+ closeForm();await loadPend();toast("บันทึกแล้ว ✓");
+ syncUploads();
+}
+
+/* ---------- upload pending images to Google Drive (via Apps Script) ---------- */
+const b2d=b=>new Promise(res=>{const f=new FileReader();f.onload=()=>res(f.result);f.readAsDataURL(b)});
+async function uploadToDrive(pd){
+ const tok=await auth.currentUser.getIdToken();
+ const t=all.find(x=>x.id===pd.txId);
+ const name=t?`${t.date}_${t.type==="in"?"รับ":"จ่าย"}_${t.amount}_${pd.pid}.jpg`:`${pd.txId}_${pd.pid}.jpg`;
+ const data=(await b2d(pd.blob)).split(",")[1];
+ const r=await fetch(driveUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+  body:JSON.stringify({idToken:tok,name,mime:"image/jpeg",data,note:t?[t.cat,t.title,t.ref].filter(Boolean).join(" | "):""})});
+ const j=await r.json();
+ if(!j.ok)throw new Error(j.error||"upload");
+ return j.id;
+}
+let syncing=false;
+async function syncUploads(manual){
+ if(!user||!admin||syncing)return;
+ if(!driveUrl){if(manual)toast("ยังไม่ได้ตั้งค่า Google Drive (เมนู → ตั้งค่า Google Drive)");return}
+ if(!navigator.onLine){if(manual)toast("ยังไม่มีอินเทอร์เน็ต");return}
+ syncing=true;let ok=0,fail=0,lastErr="";
+ try{
+  await loadPend();
+  for(const pd of [...pend]){
+   try{
+    const id=await uploadToDrive(pd);
+    const url=`https://drive.google.com/thumbnail?id=${id}&sz=w1600`;
+    try{
+     await withTimeout(updateDoc(doc(fs,"tx",pd.txId),{images:arrayUnion({url,path:id}),updated:Date.now()}),15000);
+    }catch(e){
+     if(e.code==="not-found"){await lDel("pending",pd.pid);continue}
+     throw e;
+    }
+    await lDel("pending",pd.pid);ok++;
+   }catch(e){fail++;lastErr=e.message||""}
+  }
+ }finally{syncing=false}
+ await loadPend();
+ if(fail)toast(`อัปโหลดไม่สำเร็จ ${fail} รูป${lastErr?" ("+lastErr+")":""}`);
+ else if(ok)toast(`อัปโหลดรูปขึ้น Drive แล้ว ${ok} รูป ☁️`);
+ else if(manual)toast("ไม่มีรูปที่ค้างอัปโหลด");
+}
+const withTimeout=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(r,ms))]);
+
+/* ---------- export / backup ---------- */
+function download(name,blob){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+const monthRows=()=>all.filter(t=>t.date.slice(0,7)===monthKey(view)).sort((a,b)=>a.date.localeCompare(b.date)||(a.created||0)-(b.created||0));
+function exportCsv(){
+ const q=s=>`"${String(s??"").replace(/"/g,'""')}"`;
+ let c="วันที่,ประเภท,หมวดหมู่,รายการ,ผู้เกี่ยวข้อง/เลขที่,รายรับ,รายจ่าย,หมายเหตุ,จำนวนรูปแนบ\n";
+ for(const t of monthRows())c+=[t.date,t.type==="in"?"รายรับ":"รายจ่าย",q(t.cat),q(t.title),q(t.ref),t.type==="in"?t.amount:"",t.type==="out"?t.amount:"",q(t.note),(t.images||[]).length].join(",")+"\n";
+ download(`บัญชี-${monthKey(view)}.csv`,new Blob(["﻿"+c],{type:"text/csv"}));
+}
+function backup(){
+ download(`สำรองข้อมูลบัญชี-${today()}.json`,new Blob([JSON.stringify({v:2,unitName,data:all})],{type:"application/json"}));
+ toast("สร้างไฟล์สำรองแล้ว (รูปเก็บอยู่ใน Firebase Storage)");
+}
+const d2b=d=>fetch(d).then(r=>r.blob());
+async function importRecord(t){
+ const {id:_i,images:imgs=[],driveLinks:_d,...rest}=t;
+ const d=doc(txCol);
+ const keep=imgs.filter(x=>x&&typeof x==="object"&&!(x instanceof Blob)&&x.url&&x.path);
+ await setDoc(d,{...rest,images:keep,created:rest.created||Date.now(),by:user?user.email:""});
+ for(const x of imgs){
+  let b=null;
+  if(typeof x==="string"&&x.startsWith("data:"))b=await d2b(x);
+  else if(x instanceof Blob)b=x;
+  if(b)await lPut("pending",{txId:d.id,blob:b});
+ }
+}
+async function restore(file){
+ try{
+  const j=JSON.parse(await file.text());
+  if(!Array.isArray(j.data))throw 0;
+  if(!confirm(`กู้คืน ${j.data.length} รายการ? (จะเพิ่มต่อจากรายการเดิม ไม่ลบของเดิม)`))return;
+  for(const t of j.data)await importRecord(t);
+  addLog("restore",`กู้คืนข้อมูลจากไฟล์สำรอง ${j.data.length} รายการ`);
+  await loadPend();syncUploads();toast("กู้คืนสำเร็จ ✓");
+ }catch{toast("ไฟล์สำรองไม่ถูกต้อง")}
+}
+async function migrateLegacy(){
+ const old=await lAll("tx");
+ if(!old.length)return toast("ไม่มีข้อมูลเก่าในเครื่อง");
+ if(!confirm(`นำเข้าข้อมูลเก่า ${old.length} รายการขึ้นระบบ? (ควรทำจากเครื่องเดียวเท่านั้น เพื่อไม่ให้ข้อมูลซ้ำ)`))return;
+ try{
+  for(const t of old)await importRecord(t);
+  addLog("migrate",`นำเข้าข้อมูลเก่าจากเครื่อง ${old.length} รายการ`);
+  await lClear("tx");$("mMigrate").style.display="none";
+  await loadPend();syncUploads();toast("นำเข้าข้อมูลเก่าสำเร็จ ✓");
+ }catch(e){toast("นำเข้าไม่สำเร็จ: "+(e.code||e.message))}
+}
+function printReport(){
+ const rows=monthRows();
+ const before=all.filter(t=>t.date.slice(0,7)<monthKey(view)).reduce((s,t)=>s+(t.type==="in"?1:-1)*t.amount,0);
+ let bal=before,tin=0,tout=0;
+ const body=rows.map((t,i)=>{
+  if(t.type==="in"){bal+=t.amount;tin+=t.amount}else{bal-=t.amount;tout+=t.amount}
+  return `<tr><td>${i+1}</td><td>${thDate(t.date)}</td><td>${esc(t.title||t.cat)}${t.ref?" ("+esc(t.ref)+")":""}</td><td class="n">${t.type==="in"?fmt(t.amount):""}</td><td class="n">${t.type==="out"?fmt(t.amount):""}</td><td class="n">${fmt(bal)}</td></tr>`;
+ }).join("");
+ $("report").innerHTML=`<h2>${esc(unitName||"บัญชีรายรับ-รายจ่ายหน่วย")}</h2><p>รายงานรับ-จ่ายเงิน ประจำเดือน ${THM[view.getMonth()]} ${view.getFullYear()+543}</p><p>ยอดยกมา ${fmt(before)} บาท</p>
+ <table><tr><th>ที่</th><th>วันที่</th><th>รายการ</th><th class="n">รับ</th><th class="n">จ่าย</th><th class="n">คงเหลือ</th></tr>${body}
+ <tr><th colspan="3">รวม</th><th class="n">${fmt(tin)}</th><th class="n">${fmt(tout)}</th><th class="n">${fmt(bal)}</th></tr></table>
+ <div class="sign"><div>ลงชื่อ ................................<br>ผู้จัดทำ</div><div>ลงชื่อ ................................<br>ผู้ตรวจ</div><div>ลงชื่อ ................................<br>ผู้อนุมัติ</div></div>`;
+ window.print();
+}
+
+/* ---------- auth & roles ---------- */
+setPersistence(auth,browserSessionPersistence).catch(()=>{});
+function setRole(v){
+ admin=v;
+ document.body.classList.toggle("is-admin",v);
+ $("fab").style.display=v?"":"none";
+ const b=$("roleBadge");
+ b.textContent=v?"นายทหารการเงิน":"หัวหน้า · ดูอย่างเดียว";
+ b.className="role on"+(v?" fin":"");
+}
+const authMsg=e=>({
+ "auth/invalid-credential":"รหัสผ่านไม่ถูกต้อง","auth/wrong-password":"รหัสผ่านไม่ถูกต้อง","auth/invalid-login-credentials":"รหัสผ่านไม่ถูกต้อง",
+ "auth/user-not-found":"ยังไม่ได้สร้างบัญชี admin ใน Firebase","auth/too-many-requests":"ลองผิดหลายครั้ง กรุณารอสักครู่",
+ "auth/network-request-failed":"เชื่อมต่ออินเทอร์เน็ตไม่ได้",
+ "auth/operation-not-allowed":"ยังไม่ได้เปิดวิธีเข้าสู่ระบบใน Firebase (Email/Password และ Anonymous)",
+ "auth/admin-restricted-operation":"ยังไม่ได้เปิด Anonymous ใน Firebase"
+}[e.code]||("เข้าสู่ระบบไม่สำเร็จ: "+(e.code||e.message)));
+let unsubTx=null,unsubMeta=null,unsubLog=null;
+function stopListen(){[unsubTx,unsubMeta,unsubLog].forEach(u=>u&&u());unsubTx=unsubMeta=unsubLog=null}
+function listen(){
+ stopListen();
+ unsubTx=onSnapshot(txCol,s=>{all=s.docs.map(d=>({id:d.id,...d.data()}));render()},e=>toast("โหลดข้อมูลไม่สำเร็จ: "+(e.code||e.message)));
+ unsubMeta=onSnapshot(doc(fs,"meta","settings"),d=>{const m=d.exists()?d.data():{};unitName=m.unitName||"";const nd=m.driveUrl===undefined?DEFAULT_DRIVE_URL:m.driveUrl;const ch=nd!==driveUrl;driveUrl=nd;render();if(ch&&admin)syncUploads()},()=>{});
+ unsubLog=onSnapshot(query(collection(fs,"logs"),orderBy("ts","desc"),limit(200)),s=>{logs=s.docs.map(d=>({id:d.id,...d.data()}));renderLogs()},()=>{});
+}
+const ACT={add:"เพิ่ม",edit:"แก้ไข",delete:"ลบ",restore:"กู้คืน",migrate:"นำเข้า",unit:"ตั้งค่า"};
+function renderLogs(){
+ if(!logs.length){$("logList").innerHTML='<div class="empty" style="padding:30px 0">ยังไม่มีประวัติการแก้ไข</div>';return}
+ $("logList").innerHTML=logs.map(l=>{
+  const when=new Date(l.ts).toLocaleString("th-TH",{dateStyle:"medium",timeStyle:"short"});
+  const ch=(l.changes||[]).map(c=>`<div class="lc">${esc(c.f)}: ${c.from?esc(c.from)+" → ":""}${esc(c.to)}</div>`).join("");
+  const dt=l.data?`<div class="lc">ข้อมูลที่ถูกลบ: ${esc(thDate(l.data.date))} · ${esc(l.data.cat)}${l.data.ref?" · "+esc(l.data.ref):""}${l.data.note?" · "+esc(l.data.note):""}</div>`:"";
+  return `<div class="lg"><div class="lh"><span class="tag ${l.action}">${ACT[l.action]||esc(l.action)}</span><time>${when}</time></div><div>${esc(l.label)}</div>${ch}${dt}</div>`;
+ }).join("");
+}
+function resetLoginUI(){$("loginErr").textContent="";$("pinStep").style.display="none";$("roleStep").style.display="block";$("loginPw").value=""}
+onAuthStateChanged(auth,u=>{
+ user=u;
+ if(u){
+  $("loginBg").classList.remove("show");
+  setRole(u.email===ADMIN_EMAIL);
+  listen();loadPend().then(()=>syncUploads());
+ }else{
+  stopListen();all=[];logs=[];setRole(false);$("roleBadge").className="role";render();resetLoginUI();
+  $("loginBg").classList.add("show");
+ }
+});
+const loginErr=e=>{const m=authMsg(e);$("loginErr").textContent=m;toast(m)};
+$("roleHead").onclick=async()=>{$("loginErr").textContent="";try{await signInAnonymously(auth)}catch(e){loginErr(e)}};
+$("roleFin").onclick=()=>{$("roleStep").style.display="none";$("pinStep").style.display="block";$("loginPw").value="";setTimeout(()=>$("loginPw").focus(),50)};
+$("pinBack").onclick=resetLoginUI;
+async function login(){
+ const pin=$("loginPw").value.trim();if(!pin)return;
+ try{await signInWithEmailAndPassword(auth,ADMIN_EMAIL,pin+ADMIN_SUFFIX)}
+ catch(e){$("loginPw").value="";loginErr(e)}
+}
+$("loginOk").onclick=login;
+$("loginPw").onkeydown=e=>{if(e.key==="Enter")login()};
+
+/* ---------- events ---------- */
+$("fab").onclick=()=>openForm();
+$("fCancel").onclick=closeForm;
+$("fSave").onclick=save;
+$("formBg").onclick=e=>{if(e.target.id==="formBg")closeForm()};
+$("menuBg").onclick=e=>{if(e.target.id==="menuBg")closeMenu()};
+document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>setType(b.dataset.t));
+$("bCam").onclick=()=>$("fileCam").click();
+$("bGal").onclick=()=>$("fileGal").click();
+$("fileCam").onchange=async e=>{await addFiles(e.target.files);e.target.value=""};
+$("fileGal").onchange=async e=>{await addFiles(e.target.files);e.target.value=""};
+$("photos").onclick=e=>{
+ if(e.target.dataset.x!==undefined){photos.splice(+e.target.dataset.x,1);renderPhotos()}
+ else if(e.target.dataset.i!==undefined){$("vImg").src=photoSrc(photos[+e.target.dataset.i]);$("viewer").classList.add("show")}
+};
+$("vClose").onclick=()=>$("viewer").classList.remove("show");
+$("fDel").onclick=async()=>{
+ if(!(editing&&admin&&confirm("ลบรายการนี้ถาวร?")))return;
+ const t=editing,b=writeBatch(fs);
+ for(const p of pendOf(t.id))await lDel("pending",p.pid);
+ b.delete(doc(fs,"tx",t.id));
+ b.set(logRef(),logDoc("delete",t,[],snap(t)));
+ b.commit().catch(e=>toast("ลบไม่สำเร็จ: "+(e.code||e.message)));
+ closeForm();await loadPend();toast("ลบแล้ว");
+};
+$("list").onclick=e=>{const it=e.target.closest(".item");if(it)openForm(all.find(t=>t.id===it.dataset.id),!admin)};
+$("prev").onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);render()};
+$("next").onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);render()};
+$("q").oninput=render;
+$("searchBtn").onclick=()=>{
+ const b=$("searchBox");b.classList.toggle("show");
+ if(b.classList.contains("show"))$("q").focus();else{$("q").value="";render()}
+};
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+ filter=b.dataset.f;document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));render();
+});
+$("menuBtn").onclick=()=>$("menuBg").classList.add("show");
+const closeMenu=()=>$("menuBg").classList.remove("show");
+const needAdmin=()=>{if(admin)return true;closeMenu();toast("เฉพาะนายทหารการเงินเท่านั้น");return false};
+$("mClose").onclick=closeMenu;
+$("mUnit").onclick=()=>{
+ if(!needAdmin())return;closeMenu();
+ const n=prompt("ชื่อหน่วย (แสดงบนหัวแอปและรายงาน)",unitName);
+ if(n===null)return;
+ const b=writeBatch(fs);
+ b.set(doc(fs,"meta","settings"),{unitName:n.trim()},{merge:true});
+ b.set(logRef(),{ts:Date.now(),action:"unit",txId:"",label:`เปลี่ยนชื่อหน่วยเป็น "${n.trim()}"`,changes:[],data:null,by:user?user.email:""});
+ b.commit().catch(e=>toast("บันทึกไม่สำเร็จ: "+(e.code||e.message)));
+};
+const GS_CODE="// อัปโหลดรูปสลิปเข้าโฟลเดอร์ Google Drive (ยืนยันตัวตนด้วย Firebase ของนายทหารการเงิน)\nconst FOLDER_ID = '1Z3tvptRBJ3cCFZBEnCC8vRNK7Kd7p9lr';\nconst ADMIN_EMAIL = 'admin@stan70fn.app';\nconst API_KEY = 'AIzaSyAwV2QirTn_bjZi7XgF4gDQidYmWiWjpo4';\n\nfunction doPost(e) {\n  try {\n    const p = JSON.parse(e.postData.contents);\n    const res = UrlFetchApp.fetch(\n      'https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + API_KEY,\n      { method: 'post', contentType: 'application/json',\n        payload: JSON.stringify({ idToken: p.idToken }), muteHttpExceptions: true });\n    const u = JSON.parse(res.getContentText());\n    if (!u.users || u.users[0].email !== ADMIN_EMAIL) return out({ ok: false, error: 'unauthorized' });\n    const blob = Utilities.newBlob(Utilities.base64Decode(p.data), p.mime || 'image/jpeg', p.name);\n    const f = DriveApp.getFolderById(FOLDER_ID).createFile(blob);\n    f.setDescription(p.note || '');\n    try { f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (err) {}\n    return out({ ok: true, id: f.getId() });\n  } catch (err) {\n    return out({ ok: false, error: String(err) });\n  }\n}\n\nfunction doGet() { return out({ ok: true, msg: 'ready' }); }\n\nfunction out(o) {\n  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);\n}\n";
+$("mCode").onclick=()=>{if(!needAdmin())return;closeMenu();$("codeTxt").value=GS_CODE;$("codeBg").classList.add("show")};
+$("codeClose").onclick=()=>$("codeBg").classList.remove("show");
+$("codeBg").onclick=e=>{if(e.target.id==="codeBg")$("codeBg").classList.remove("show")};
+$("codeCopy").onclick=async()=>{
+ try{await navigator.clipboard.writeText(GS_CODE)}catch{$("codeTxt").select();document.execCommand("copy")}
+ toast("คัดลอกโค้ดแล้ว ✓");
+};
+$("mDrive").onclick=()=>{
+ if(!needAdmin())return;closeMenu();
+ const u=prompt("วาง URL ของ Apps Script Web App (ว่าง = ปิดการอัปโหลดรูป)",driveUrl);
+ if(u===null)return;
+ const b=writeBatch(fs);
+ b.set(doc(fs,"meta","settings"),{driveUrl:u.trim()},{merge:true});
+ b.set(logRef(),{ts:Date.now(),action:"unit",txId:"",label:u.trim()?"ตั้งค่าที่เก็บรูปเป็น Google Drive":"ปิดการอัปโหลดรูปขึ้น Google Drive",changes:[],data:null,by:user?user.email:""});
+ b.commit().catch(e=>toast("บันทึกไม่สำเร็จ: "+(e.code||e.message)));
+};
+$("mLog").onclick=()=>{closeMenu();renderLogs();$("logBg").classList.add("show")};
+$("logClose").onclick=()=>$("logBg").classList.remove("show");
+$("logBg").onclick=e=>{if(e.target.id==="logBg")$("logBg").classList.remove("show")};
+$("mPrint").onclick=()=>{closeMenu();printReport()};
+$("mCsv").onclick=()=>{closeMenu();exportCsv()};
+$("mBackup").onclick=()=>{closeMenu();backup()};
+$("mRestore").onclick=()=>{if(needAdmin())$("fileRestore").click()};
+$("fileRestore").onchange=async e=>{closeMenu();if(e.target.files[0])await restore(e.target.files[0]);e.target.value=""};
+$("mMigrate").onclick=()=>{if(!needAdmin())return;closeMenu();migrateLegacy()};
+$("mSync").onclick=()=>{closeMenu();syncUploads(true)};
+$("mLogout").onclick=async()=>{closeMenu();await signOut(auth)};
+window.addEventListener("online",()=>syncUploads());
+
+/* ---------- init ---------- */
+render();
+openDB().then(async()=>{
+ await loadPend();
+ try{if((await lAll("tx")).length)$("mMigrate").style.display="block"}catch{}
+}).catch(()=>toast("เปิดที่เก็บรูปในเครื่องไม่ได้ (อย่าใช้โหมดส่วนตัว)"));
+try{
+ const mf=document.createElement("link");mf.rel="manifest";
+ mf.href=URL.createObjectURL(new Blob([JSON.stringify({name:"บัญชีรายรับ-รายจ่ายหน่วย",short_name:"บัญชีหน่วย",start_url:location.href.split("#")[0],display:"standalone",background_color:"#ffffff",theme_color:"#ffffff",lang:"th",icons:[{src:$("iconLink").href,sizes:"any",type:"image/svg+xml"}]})],{type:"application/manifest+json"}));
+ document.head.appendChild(mf);
+}catch{}
+</script>
+</body>
+</html>
